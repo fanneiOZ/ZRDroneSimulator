@@ -1,0 +1,19 @@
+{
+  "name": "DroneSimulator",
+  "description": "Backend WebSocket for ZENRoom test",
+  "private": true,
+  "scripts": {
+    "start": "node build/DroneSimBE.js"
+  },
+  "dependencies": {
+    "express": "^4.16.3",
+    "ws": "1.1.1"
+  },
+  "devDependencies": {
+    "@types/compression": "0.0.36",
+    "@types/ws": "0.0.29",
+    "@types/express": "4.0.31",
+    "@types/node": "4.0.30",
+    "typescript": "2.5.0"
+  }
+}
