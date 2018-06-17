@@ -107,6 +107,14 @@ export class Drone {
 
         return [result, x, y];
     }
+
+    public getCommandAction(repeatAt: number): any {
+        let result = {
+            commandAction: this.CommandStack[repeatAt].getCmdValue(),
+            cmdArg: this.CommandStack[repeatAt].getCmdArgument()
+        };
+        return result;
+    }
 }
 
 class Command {

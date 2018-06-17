@@ -1,4 +1,5 @@
 dist
+build
 node_modules
 systemjs.config.js
 index.html

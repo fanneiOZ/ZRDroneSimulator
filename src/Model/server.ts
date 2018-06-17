@@ -60,6 +60,9 @@ export class DroneWebSocketServer {
 
             let iDrone = this.startNewDrone(clientID);
             let res = new Response(requestResult.Started, "Drone created.", clientID, iDrone);
+            res.setCommandInput(droneCommand.createDrone);
+            res.setCommandAction(droneCommand.placeAt);
+
             ws.send(JSON.stringify(res));
 
             ws.on('message', message => this.parseCommand(message, ws, clientID));
@@ -95,9 +98,16 @@ export class DroneWebSocketServer {
         var Request: any;
         var requestClientID: string;         
         var res: Response;
+        var connectedClient: any;
+        var commandInput: string;
+        var commandAction: string;
+
         try {
             Request = JSON.parse(message);
             let cmdValue = String(Request.Command).toUpperCase();
+            commandInput = cmdValue;
+            commandAction = commandInput;
+
             requestClientID = Request.ClientID ? String(Request.ClientID) : pClientID;
             affectedDrone = this.DroneBuffer.find(x => x.getOwner() == requestClientID);
             var reqResult: number;
@@ -143,6 +153,11 @@ export class DroneWebSocketServer {
                     else {
                         execution = affectedDrone.Repeat();
                     }
+
+                    let itemRepeat = affectedDrone.getCommandAction(Number(Request.cmdArg.repeatAt));
+
+                    commandAction = itemRepeat.commandAction;
+
                     reqResult = execution[0] ? requestResult.Succeeded : requestResult.Failed;
 
                     switch (execution[1]) {
@@ -166,6 +181,11 @@ export class DroneWebSocketServer {
                     }
                     break;
 
+                case droneCommand.requestRemote:
+                    connectedClient = this.requestConnectedClient(pClientID);
+                    reqResult = requestResult.ListPushed;
+                    resMessage = responseMessage.ConnectedClientsPushed;
+                    break;
                 default:
                     reqResult = requestResult.Failed;
                     resMessage = responseMessage.InvalidCommand;
@@ -173,19 +193,25 @@ export class DroneWebSocketServer {
             
             let remotePrefix = Request.ClientID ? '[REMOTING] ' : '';
 
-            if (reqResult == requestResult.Failed) {
+            if (reqResult == requestResult.ListPushed) {
+                res = new Response(reqResult, resMessage, pClientID, null, connectedClient);
+            }else if (reqResult == requestResult.Failed) {
                 res = new Response(reqResult, remotePrefix + resMessage, pClientID);
             }
             else {
                 res = new Response(reqResult, remotePrefix + resMessage, pClientID, affectedDrone);
+                
 
                 if (Request.ClientID && reqResult == requestResult.Succeeded) {
                     let resRemote = this.remoteResponseFactory(pClientID, affectedDrone, cmdValue);
+                    resRemote.setCommandInput(commandInput);
+                    resRemote.setCommandAction(commandAction);
+
                     let isBroadcasted = this.broadcastRemoteControl(Request.ClientID, resRemote);    
 
                     if (!isBroadcasted) {
                         let failedDisconnected = new Response(
-                            requestResult.Failed,
+                            requestResult.RemoteDisconnected,
                             responseMessage.RemoteDisconnected,
                             pClientID
                         )
@@ -193,6 +219,9 @@ export class DroneWebSocketServer {
                     }
                 }
             }
+
+            res.setCommandAction(commandAction);
+            res.setCommandInput(commandInput);
         }
         catch {
 
@@ -256,6 +285,23 @@ export class DroneWebSocketServer {
         );
 
         return IsAlive
+    }
+
+    private requestConnectedClient(requestClientID: string): Array<string> {
+        let connectedClient = new Array<string>();
+        this.connectedClient.forEach(
+            (clientID: string, ws: WebSocket) => {
+                if (requestClientID != clientID) {
+                    if (ws.readyState === 1) {
+                        connectedClient.push(clientID);
+                    } else {
+                        this.connectedClient.delete(ws);
+                    }
+                }
+            }
+        )
+
+        return connectedClient;
     }
 }
 

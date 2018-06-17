@@ -97,6 +97,13 @@ class Drone {
         }
         return [result, x, y];
     }
+    getCommandAction(repeatAt) {
+        let result = {
+            commandAction: this.CommandStack[repeatAt].getCmdValue(),
+            cmdArg: this.CommandStack[repeatAt].getCmdArgument()
+        };
+        return result;
+    }
 }
 exports.Drone = Drone;
 class Command {

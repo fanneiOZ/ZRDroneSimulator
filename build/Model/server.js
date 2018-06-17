@@ -42,6 +42,8 @@ class DroneWebSocketServer {
             this.connectedClient.set(ws, clientID);
             let iDrone = this.startNewDrone(clientID);
             let res = new response_1.Response(-1 /* Started */, "Drone created.", clientID, iDrone);
+            res.setCommandInput("CREATE" /* createDrone */);
+            res.setCommandAction("PLACE" /* placeAt */);
             ws.send(JSON.stringify(res));
             ws.on('message', message => this.parseCommand(message, ws, clientID));
             ws.on('close', (code, message) => {
@@ -70,9 +72,14 @@ class DroneWebSocketServer {
         var Request;
         var requestClientID;
         var res;
+        var connectedClient;
+        var commandInput;
+        var commandAction;
         try {
             Request = JSON.parse(message);
             let cmdValue = String(Request.Command).toUpperCase();
+            commandInput = cmdValue;
+            commandAction = commandInput;
             requestClientID = Request.ClientID ? String(Request.ClientID) : pClientID;
             affectedDrone = this.DroneBuffer.find(x => x.getOwner() == requestClientID);
             var reqResult;
@@ -116,6 +123,8 @@ class DroneWebSocketServer {
                     else {
                         execution = affectedDrone.Repeat();
                     }
+                    let itemRepeat = affectedDrone.getCommandAction(Number(Request.cmdArg.repeatAt));
+                    commandAction = itemRepeat.commandAction;
                     reqResult = execution[0] ? 1 /* Succeeded */ : 0 /* Failed */;
                     switch (execution[1]) {
                         case "MOVE" /* moveForward */:
@@ -137,25 +146,37 @@ class DroneWebSocketServer {
                             break;
                     }
                     break;
+                case "REMOTE" /* requestRemote */:
+                    connectedClient = this.requestConnectedClient(pClientID);
+                    reqResult = -2 /* ListPushed */;
+                    resMessage = "List of connected clients pushed." /* ConnectedClientsPushed */;
+                    break;
                 default:
                     reqResult = 0 /* Failed */;
                     resMessage = "Invalid command. Please try with LEFT, RIGHT, MOVE, PLACE" /* InvalidCommand */;
             }
             let remotePrefix = Request.ClientID ? '[REMOTING] ' : '';
-            if (reqResult == 0 /* Failed */) {
+            if (reqResult == -2 /* ListPushed */) {
+                res = new response_1.Response(reqResult, resMessage, pClientID, null, connectedClient);
+            }
+            else if (reqResult == 0 /* Failed */) {
                 res = new response_1.Response(reqResult, remotePrefix + resMessage, pClientID);
             }
             else {
                 res = new response_1.Response(reqResult, remotePrefix + resMessage, pClientID, affectedDrone);
                 if (Request.ClientID && reqResult == 1 /* Succeeded */) {
                     let resRemote = this.remoteResponseFactory(pClientID, affectedDrone, cmdValue);
+                    resRemote.setCommandInput(commandInput);
+                    resRemote.setCommandAction(commandAction);
                     let isBroadcasted = this.broadcastRemoteControl(Request.ClientID, resRemote);
                     if (!isBroadcasted) {
-                        let failedDisconnected = new response_1.Response(0 /* Failed */, "Remoted drone session disconnected." /* RemoteDisconnected */, pClientID);
+                        let failedDisconnected = new response_1.Response(-3 /* RemoteDisconnected */, "Remoted drone session disconnected." /* RemoteDisconnected */, pClientID);
                         res = failedDisconnected;
                     }
                 }
             }
+            res.setCommandAction(commandAction);
+            res.setCommandInput(commandInput);
         }
         catch (_a) {
             reqResult = 0 /* Failed */;
@@ -170,19 +191,19 @@ class DroneWebSocketServer {
         var resRemoteMessage;
         switch (cmdValue) {
             case "MOVE" /* moveForward */:
-                resRemoteMessage = "[REMOTED] Drone remoted moving to %direction% by %remoter%" /* MoveRemoted */
+                resRemoteMessage = "Drone remoted moving to %direction% by %remoter%" /* MoveRemoted */
                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                     .replace("%remoter%" /* remoter */, pClientID);
                 break;
             case "LEFT" /* rotateToLeft */:
             case "RIGHT" /* rotateToRight */:
-                resRemoteMessage = "[REMOTED] Drone remoted rotating to %rotation% toward the %direction% by %remoter%" /* RotateRemoted */
+                resRemoteMessage = "Drone remoted rotating to %rotation% toward the %direction% by %remoter%" /* RotateRemoted */
                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                     .replace("%rotation%" /* rotation */, cmdValue.toLowerCase())
                     .replace("%remoter%" /* remoter */, pClientID);
                 break;
             case "PLACE" /* placeAt */:
-                resRemoteMessage = "[REMOTED] Drone remoted placing at %position% heading to %direction% by %remoter%." /* PlaceRemoted */
+                resRemoteMessage = "Drone remoted placing at %position% heading to %direction% by %remoter%." /* PlaceRemoted */
                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                     .replace("%position%" /* position */, affectedDrone.getPositionLabel().toLowerCase())
                     .replace("%remoter%" /* remoter */, pClientID);
@@ -206,6 +227,20 @@ class DroneWebSocketServer {
             }
         });
         return IsAlive;
+    }
+    requestConnectedClient(requestClientID) {
+        let connectedClient = new Array();
+        this.connectedClient.forEach((clientID, ws) => {
+            if (requestClientID != clientID) {
+                if (ws.readyState === 1) {
+                    connectedClient.push(clientID);
+                }
+                else {
+                    this.connectedClient.delete(ws);
+                }
+            }
+        });
+        return connectedClient;
     }
 }
 DroneWebSocketServer.PORT = 8085;

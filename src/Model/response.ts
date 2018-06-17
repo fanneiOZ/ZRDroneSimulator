@@ -10,15 +10,18 @@ export class Response {
             Owner?: string,
             Position: [number, number],
             Direction: number
-        }        
+        }
+        connectedClient?: any
     };
+    private commandInput?: string;
+    private commandAction?: string; 
 
-    constructor(result: requestResult, message: string, clientID: string, resDrone?: Drone)
+    constructor(result: requestResult, message: string, clientID: string, resDrone?: Drone, connectedClient?: any)
     {
         var response: any;
 
         if (resDrone) {
-            
+
             var pDrone: any;
             if (clientID != resDrone.getOwner()) {
                 pDrone = {
@@ -32,11 +35,15 @@ export class Response {
                     Direction: resDrone.getDirection()
                 };
             }
-
                 response = { message: message, clientID: clientID, drone: pDrone };
-        } else  response = { message: message, clientID: clientID };
+        } else if (connectedClient)
+                response = { message: message, clientID: clientID, connectedClient: connectedClient };
+        else    response = { message: message, clientID: clientID };
  
         this.reqResult = result;
         this.res = response;
     }
+
+    public setCommandInput(cmd: string) { this.commandInput = cmd; }
+    public setCommandAction(cmd: string) { this.commandAction = cmd; }
 }
