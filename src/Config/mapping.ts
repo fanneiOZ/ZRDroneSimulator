@@ -58,7 +58,7 @@ export const enum replaceKeyword {
     remoter = '%remoter%'
 }
 
-export const enum droneCommand {
+export enum droneCommand {
     createDrone = 'CREATE',
     rotateToLeft = 'LEFT',
     rotateToRight = 'RIGHT',

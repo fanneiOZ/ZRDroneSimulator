@@ -5,6 +5,6 @@
     "\\src\\Config",
     "\\src\\Model"
   ],
-  "SelectedNode": "\\.gitignore",
+  "SelectedNode": "\\src\\Model\\server.ts",
   "PreviewInSolutionExplorer": false
 }
