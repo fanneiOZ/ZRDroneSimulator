@@ -1,6 +1,7 @@
 {
   "name": "DroneSimulator",
   "description": "Backend WebSocket for ZENRoom test",
+  "repository": "https://github.com/fanneiOZ/ZRDroneSimulator.git",
   "private": true,
   "scripts": {
     "start": "node build/DroneSimBE.js"
