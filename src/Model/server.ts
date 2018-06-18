@@ -134,8 +134,7 @@ export class DroneWebSocketServer {
                     if (    Request.cmdArg
                         && Request.cmdArg.x && !isNaN(Request.cmdArg.x) 
                         && Request.cmdArg.y && !isNaN(Request.cmdArg.y)
-                        && Request.cmdArg.direction
-                        && (String(Request.cmdArg.Direction).toUpperCase() in droneCommand )
+                        && Request.cmdArg.direction )
                     ) {
                         let objArg = Request.cmdArg;
                         execution = affectedDrone.Place(Number(objArg.x), Number(objArg.y), String(objArg.direction).toUpperCase());
