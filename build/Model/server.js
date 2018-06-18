@@ -42,8 +42,8 @@ class DroneWebSocketServer {
             this.connectedClient.set(ws, clientID);
             let iDrone = this.startNewDrone(clientID);
             let res = new response_1.Response(-1 /* Started */, "Drone created.", clientID, iDrone);
-            res.setCommandInput("CREATE" /* createDrone */);
-            res.setCommandAction("PLACE" /* placeAt */);
+            res.setCommandInput(mapping_1.droneCommand.createDrone);
+            res.setCommandAction(mapping_1.droneCommand.placeAt);
             ws.send(JSON.stringify(res));
             ws.on('message', message => this.parseCommand(message, ws, clientID));
             ws.on('close', (code, message) => {
@@ -86,22 +86,25 @@ class DroneWebSocketServer {
             var resMessage;
             var execution;
             switch (cmdValue) {
-                case "LEFT" /* rotateToLeft */:
-                case "RIGHT" /* rotateToRight */:
+                case mapping_1.droneCommand.rotateToLeft:
+                case mapping_1.droneCommand.rotateToRight:
                     affectedDrone.Rotate(cmdValue);
                     reqResult = 1 /* Succeeded */;
                     resMessage = "Drone rotated to %rotation% toward the %direction%." /* Rotated */
                         .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                         .replace("%rotation%" /* rotation */, cmdValue.toLowerCase());
                     break;
-                case "MOVE" /* moveForward */:
+                case mapping_1.droneCommand.moveForward:
                     execution = affectedDrone.Move();
                     reqResult = execution ? 1 /* Succeeded */ : 0 /* Failed */;
                     resMessage = (execution ? "Drone moved to %direction%." /* MoveSucceeded */ : "Drone is at the %direction% edge. Unable to move forward." /* MoveFailed */)
                         .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase());
                     break;
-                case "PLACE" /* placeAt */:
-                    if (Request.cmdArg && Request.cmdArg.x && Request.cmdArg.y && Request.cmdArg.direction) {
+                case mapping_1.droneCommand.placeAt:
+                    if (Request.cmdArg
+                        && Request.cmdArg.x && !isNaN(Request.cmdArg.x)
+                        && Request.cmdArg.y && !isNaN(Request.cmdArg.y)
+                        && Request.cmdArg.direction) {
                         let objArg = Request.cmdArg;
                         execution = affectedDrone.Place(Number(objArg.x), Number(objArg.y), String(objArg.direction).toUpperCase());
                         reqResult = execution ? 1 /* Succeeded */ : 0 /* Failed */;
@@ -116,7 +119,7 @@ class DroneWebSocketServer {
                         resMessage = "Required command argument not found." /* ArgumentsIncomplete */;
                     }
                     break;
-                case "REPEAT" /* repeatCommand */:
+                case mapping_1.droneCommand.repeatCommand:
                     if (Request.cmdArg && Request.cmdArg.repeatAt) {
                         execution = affectedDrone.Repeat(Number(Request.cmdArg.repeatAt));
                     }
@@ -127,17 +130,17 @@ class DroneWebSocketServer {
                     commandAction = itemRepeat.commandAction;
                     reqResult = execution[0] ? 1 /* Succeeded */ : 0 /* Failed */;
                     switch (execution[1]) {
-                        case "MOVE" /* moveForward */:
+                        case mapping_1.droneCommand.moveForward:
                             resMessage = (execution[0] ? "Drone moved to %direction%." /* MoveSucceeded */ : "Drone is at the %direction% edge. Unable to move forward." /* MoveFailed */)
                                 .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase());
                             break;
-                        case "LEFT" /* rotateToLeft */:
-                        case "RIGHT" /* rotateToRight */:
+                        case mapping_1.droneCommand.rotateToLeft:
+                        case mapping_1.droneCommand.rotateToRight:
                             resMessage = "Drone rotated to %rotation% toward the %direction%." /* Rotated */
                                 .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                                 .replace("%rotation%" /* rotation */, execution[1].toLowerCase());
                             break;
-                        case "PLACE" /* placeAt */:
+                        case mapping_1.droneCommand.placeAt:
                             resMessage = execution[1]
                                 ? "Drone placed at %position% heading to %direction%." /* PlaceSucceeded */
                                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
@@ -146,10 +149,49 @@ class DroneWebSocketServer {
                             break;
                     }
                     break;
-                case "REMOTE" /* requestRemote */:
+                case mapping_1.droneCommand.requestRemote:
                     connectedClient = this.requestConnectedClient(pClientID);
                     reqResult = -2 /* ListPushed */;
                     resMessage = "List of connected clients pushed." /* ConnectedClientsPushed */;
+                    break;
+                case mapping_1.droneCommand.cancelRemote:
+                    if (Request.ClientID) {
+                        reqResult = -3 /* RemoteDisconnected */;
+                        resMessage = "Remoted drone session disconnected." /* RemoteDisconnected */;
+                        this.pingpongSession(pClientID, Request.ClientID, reqResult, resMessage);
+                        reqResult = -99 /* ToBeIgnored */;
+                        res = new response_1.Response(reqResult, resMessage, requestClientID);
+                    }
+                    else {
+                        reqResult = 0 /* Failed */;
+                        resMessage = "Required command argument not found." /* ArgumentsIncomplete */;
+                    }
+                    break;
+                case mapping_1.droneCommand.enterRemote:
+                    if (Request.ClientID) {
+                        reqResult = -4 /* RemoteRequested */;
+                        resMessage = "Being Remoted by %remoter%" /* BeingRemoted */;
+                        this.pingpongSession(pClientID, Request.ClientID, reqResult, resMessage);
+                        reqResult = -99 /* ToBeIgnored */;
+                        res = new response_1.Response(reqResult, resMessage, requestClientID);
+                    }
+                    else {
+                        reqResult = 0 /* Failed */;
+                        resMessage = "Required command argument not found." /* ArgumentsIncomplete */;
+                    }
+                    break;
+                case mapping_1.droneCommand.exitRemote:
+                    if (Request.ClientID) {
+                        reqResult = -5 /* RemoteClosed */;
+                        resMessage = "Remoted drone session disconnected." /* RemoteDisconnected */;
+                        this.pingpongSession(pClientID, Request.ClientID, reqResult, resMessage);
+                        reqResult = -99 /* ToBeIgnored */;
+                        res = new response_1.Response(reqResult, resMessage, requestClientID);
+                    }
+                    else {
+                        reqResult = 0 /* Failed */;
+                        resMessage = "Required command argument not found." /* ArgumentsIncomplete */;
+                    }
                     break;
                 default:
                     reqResult = 0 /* Failed */;
@@ -162,7 +204,7 @@ class DroneWebSocketServer {
             else if (reqResult == 0 /* Failed */) {
                 res = new response_1.Response(reqResult, remotePrefix + resMessage, pClientID);
             }
-            else {
+            else if (reqResult != -99 /* ToBeIgnored */) {
                 res = new response_1.Response(reqResult, remotePrefix + resMessage, pClientID, affectedDrone);
                 if (Request.ClientID && reqResult == 1 /* Succeeded */) {
                     let resRemote = this.remoteResponseFactory(pClientID, affectedDrone, cmdValue);
@@ -175,10 +217,13 @@ class DroneWebSocketServer {
                     }
                 }
             }
-            res.setCommandAction(commandAction);
-            res.setCommandInput(commandInput);
+            if (reqResult != -99 /* ToBeIgnored */) {
+                res.setCommandAction(commandAction);
+                res.setCommandInput(commandInput);
+            }
         }
-        catch (_a) {
+        catch (e) {
+            console.log(e);
             reqResult = 0 /* Failed */;
             resMessage = "Command parsing error. Please check request object." /* ProcessingError */;
             res = new response_1.Response(reqResult, resMessage, pClientID);
@@ -187,28 +232,33 @@ class DroneWebSocketServer {
             ws.send(JSON.stringify(res));
         }
     }
+    pingpongSession(requestClientID, remotingClientID, reqResult, resMessage) {
+        let res = new response_1.Response(reqResult, resMessage, requestClientID);
+        this.broadcastRemoteControl(remotingClientID, res);
+        return res;
+    }
     remoteResponseFactory(pClientID, affectedDrone, cmdValue) {
         var resRemoteMessage;
         switch (cmdValue) {
-            case "MOVE" /* moveForward */:
+            case mapping_1.droneCommand.moveForward:
                 resRemoteMessage = "Drone remoted moving to %direction% by %remoter%" /* MoveRemoted */
                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                     .replace("%remoter%" /* remoter */, pClientID);
                 break;
-            case "LEFT" /* rotateToLeft */:
-            case "RIGHT" /* rotateToRight */:
+            case mapping_1.droneCommand.rotateToLeft:
+            case mapping_1.droneCommand.rotateToRight:
                 resRemoteMessage = "Drone remoted rotating to %rotation% toward the %direction% by %remoter%" /* RotateRemoted */
                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                     .replace("%rotation%" /* rotation */, cmdValue.toLowerCase())
                     .replace("%remoter%" /* remoter */, pClientID);
                 break;
-            case "PLACE" /* placeAt */:
+            case mapping_1.droneCommand.placeAt:
                 resRemoteMessage = "Drone remoted placing at %position% heading to %direction% by %remoter%." /* PlaceRemoted */
                     .replace("%direction%" /* direction */, affectedDrone.getDirectionLabel().toLowerCase())
                     .replace("%position%" /* position */, affectedDrone.getPositionLabel().toLowerCase())
                     .replace("%remoter%" /* remoter */, pClientID);
                 break;
-            case "REPEAT" /* repeatCommand */:
+            case mapping_1.droneCommand.repeatCommand:
                 break;
         }
         return new response_1.Response(2 /* Remoted */, resRemoteMessage, pClientID, affectedDrone);

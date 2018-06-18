@@ -31,7 +31,11 @@ export const enum requestResult {
     Failed = 0,
     Started = -1,
     ListPushed = -2,
-    RemoteDisconnected = -3
+    RemoteDisconnected = -3,
+    RemoteRequested = -4,
+    RemoteClosed = -5,
+
+    ToBeIgnored = -99
 }
 
 export const enum responseMessage {
@@ -48,7 +52,9 @@ export const enum responseMessage {
     ArgumentsIncomplete = 'Required command argument not found.',
     ProcessingError     = 'Command parsing error. Please check request object.',
     RemoteDisconnected = 'Remoted drone session disconnected.',
-    ConnectedClientsPushed = 'List of connected clients pushed.'
+    ConnectedClientsPushed = 'List of connected clients pushed.',
+    ConnectedToRemote   = 'Remote client connected.',
+    BeingRemoted        = 'Being Remoted by %remoter%'
 }
 
 export const enum replaceKeyword {
@@ -65,6 +71,9 @@ export enum droneCommand {
     moveForward = 'MOVE',
     placeAt = 'PLACE',
     repeatCommand = 'REPEAT',
-    requestRemote = 'REMOTE'
+    requestRemote = 'REMOTE',
+    enterRemote = 'ENTERREMOTE',
+    exitRemote = 'EXITREMOTE',
+    cancelRemote = 'CANCELREMOTE'
 }
 

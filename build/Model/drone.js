@@ -11,7 +11,7 @@ class Drone {
         let y = startY;
         let direction = startDirection;
         let cmdArg = { x, y, direction };
-        this.pushCommandStack("PLACE" /* placeAt */, cmdArg);
+        this.pushCommandStack(mapping_1.droneCommand.placeAt, cmdArg);
     }
     pushCommandStack(cmd, cmdArg) {
         if (cmdArg) {
@@ -33,36 +33,38 @@ class Drone {
         let direction = placeDirection;
         let cmdArg = { x, y, direction };
         if (moveResult[0])
-            this.pushCommandStack("PLACE" /* placeAt */, cmdArg);
+            this.pushCommandStack(mapping_1.droneCommand.placeAt, cmdArg);
         return moveResult[0];
     }
     Move() {
         let moveResult = this.setValidatePosition();
         this.Position = [moveResult[1], moveResult[2]];
         if (moveResult[0])
-            this.pushCommandStack("MOVE" /* moveForward */);
+            this.pushCommandStack(mapping_1.droneCommand.moveForward);
         return moveResult[0];
     }
     Rotate(RotateTo) {
         this.Direction += mapping_1.mapRotation[RotateTo.toUpperCase()];
-        this.pushCommandStack(mapping_1.mapRotation[RotateTo.toUpperCase()] > 0 ? "LEFT" /* rotateToLeft */ : "RIGHT" /* rotateToRight */);
+        this.pushCommandStack(mapping_1.mapRotation[RotateTo.toUpperCase()] > 0 ? mapping_1.droneCommand.rotateToLeft : mapping_1.droneCommand.rotateToRight);
     }
     Repeat(indexCmd) {
         let executeAt = indexCmd ? indexCmd : this.CommandStack.length;
+        //console.log('executeAt = ' + executeAt.toString());
         let executeCmd = this.CommandStack.find(x => x.getCmdOrder() == executeAt);
+        //console.log(executeCmd);
         var execution;
         var placeArg;
-        console.log(executeCmd.getCmdOrder() + ' ' + executeCmd.getCmdValue());
+        //console.log(executeCmd.getCmdOrder() + ' ' + executeCmd.getCmdValue());
         switch (executeCmd.getCmdValue()) {
-            case "MOVE" /* moveForward */:
+            case mapping_1.droneCommand.moveForward:
                 execution = this.Move();
                 break;
-            case "LEFT" /* rotateToLeft */:
-            case "RIGHT" /* rotateToRight */:
+            case mapping_1.droneCommand.rotateToLeft:
+            case mapping_1.droneCommand.rotateToRight:
                 this.Rotate(String(executeCmd.getCmdValue()));
                 execution = true;
                 break;
-            case "PLACE" /* placeAt */:
+            case mapping_1.droneCommand.placeAt:
                 let placeArg = executeCmd.getCmdArgument();
                 execution = this.Place(placeArg.x, placeArg.y, placeArg.direction);
                 break;
@@ -98,9 +100,10 @@ class Drone {
         return [result, x, y];
     }
     getCommandAction(repeatAt) {
+        console.log(this.CommandStack[repeatAt]);
         let result = {
-            commandAction: this.CommandStack[repeatAt].getCmdValue(),
-            cmdArg: this.CommandStack[repeatAt].getCmdArgument()
+            commandAction: this.CommandStack.find(x => x.getCmdOrder() == repeatAt).getCmdValue(),
+            cmdArg: this.CommandStack.find(x => x.getCmdOrder() == repeatAt).getCmdArgument()
         };
         return result;
     }

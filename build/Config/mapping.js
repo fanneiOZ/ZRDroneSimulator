@@ -20,3 +20,16 @@ exports.mapRotation = {
     'RIGHT': -1
 };
 ;
+var droneCommand;
+(function (droneCommand) {
+    droneCommand["createDrone"] = "CREATE";
+    droneCommand["rotateToLeft"] = "LEFT";
+    droneCommand["rotateToRight"] = "RIGHT";
+    droneCommand["moveForward"] = "MOVE";
+    droneCommand["placeAt"] = "PLACE";
+    droneCommand["repeatCommand"] = "REPEAT";
+    droneCommand["requestRemote"] = "REMOTE";
+    droneCommand["enterRemote"] = "ENTERREMOTE";
+    droneCommand["exitRemote"] = "EXITREMOTE";
+    droneCommand["cancelRemote"] = "CANCELREMOTE";
+})(droneCommand = exports.droneCommand || (exports.droneCommand = {}));

@@ -54,10 +54,12 @@ export class Drone {
 
     public Repeat(indexCmd?: number): [boolean , string ] {
         let executeAt = indexCmd ? indexCmd : this.CommandStack.length;
-        let executeCmd = this.CommandStack.find(x =>  x.getCmdOrder() == executeAt );
+        //console.log('executeAt = ' + executeAt.toString());
+        let executeCmd = this.CommandStack.find(x => x.getCmdOrder() == executeAt);
+        //console.log(executeCmd);
         var execution: boolean;
         var placeArg: any;
-        console.log(executeCmd.getCmdOrder() + ' ' + executeCmd.getCmdValue());
+        //console.log(executeCmd.getCmdOrder() + ' ' + executeCmd.getCmdValue());
         switch (executeCmd.getCmdValue()) {
             case droneCommand.moveForward:
                 execution = this.Move();
@@ -109,9 +111,10 @@ export class Drone {
     }
 
     public getCommandAction(repeatAt: number): any {
+        console.log(this.CommandStack[repeatAt]);
         let result = {
-            commandAction: this.CommandStack[repeatAt].getCmdValue(),
-            cmdArg: this.CommandStack[repeatAt].getCmdArgument()
+            commandAction: this.CommandStack.find(x => x.getCmdOrder() == repeatAt).getCmdValue(),
+            cmdArg: this.CommandStack.find(x => x.getCmdOrder() == repeatAt).getCmdArgument()
         };
         return result;
     }

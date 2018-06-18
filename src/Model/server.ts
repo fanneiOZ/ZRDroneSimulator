@@ -190,6 +190,42 @@ export class DroneWebSocketServer {
                     reqResult = requestResult.ListPushed;
                     resMessage = responseMessage.ConnectedClientsPushed;
                     break;
+                case droneCommand.cancelRemote:
+                    if (Request.ClientID) {
+                        reqResult = requestResult.RemoteDisconnected;
+                        resMessage = responseMessage.RemoteDisconnected;
+                        this.pingpongSession(pClientID, Request.ClientID, reqResult, resMessage);
+                        reqResult = requestResult.ToBeIgnored;
+                        res = new Response(reqResult, resMessage, requestClientID);
+                    } else {
+                        reqResult = requestResult.Failed;
+                        resMessage = responseMessage.ArgumentsIncomplete;
+                    }
+                    break;
+                case droneCommand.enterRemote:
+                    if (Request.ClientID) {
+                        reqResult = requestResult.RemoteRequested;
+                        resMessage = responseMessage.BeingRemoted;
+                        this.pingpongSession(pClientID, Request.ClientID, reqResult, resMessage);
+                        reqResult = requestResult.ToBeIgnored;
+                        res = new Response(reqResult, resMessage, requestClientID);
+                    } else {
+                        reqResult = requestResult.Failed;
+                        resMessage = responseMessage.ArgumentsIncomplete;                        
+                    }
+                    break;
+                case droneCommand.exitRemote:
+                    if (Request.ClientID) {
+                        reqResult = requestResult.RemoteClosed;
+                        resMessage = responseMessage.RemoteDisconnected;
+                        this.pingpongSession(pClientID, Request.ClientID, reqResult, resMessage);
+                        reqResult = requestResult.ToBeIgnored;
+                        res = new Response(reqResult, resMessage, requestClientID);
+                    } else {
+                        reqResult = requestResult.Failed;
+                        resMessage = responseMessage.ArgumentsIncomplete;
+                    }
+                    break;
                 default:
                     reqResult = requestResult.Failed;
                     resMessage = responseMessage.InvalidCommand;
@@ -202,7 +238,7 @@ export class DroneWebSocketServer {
             }else if (reqResult == requestResult.Failed) {
                 res = new Response(reqResult, remotePrefix + resMessage, pClientID);
             }
-            else {
+            else if (reqResult != requestResult.ToBeIgnored) {
                 res = new Response(reqResult, remotePrefix + resMessage, pClientID, affectedDrone);
                 
 
@@ -224,11 +260,13 @@ export class DroneWebSocketServer {
                 }
             }
 
-            res.setCommandAction(commandAction);
-            res.setCommandInput(commandInput);
+            if (reqResult != requestResult.ToBeIgnored) {
+                res.setCommandAction(commandAction);
+                res.setCommandInput(commandInput);
+            }
         }
-        catch {
-
+        catch(e) {
+            console.log(e);
             reqResult = requestResult.Failed;
             resMessage = responseMessage.ProcessingError;
             res = new Response(reqResult, resMessage, pClientID);
@@ -240,6 +278,12 @@ export class DroneWebSocketServer {
 
 
     }
+    private pingpongSession(requestClientID: string, remotingClientID: string, reqResult: number, resMessage: string): Response {        
+        let res = new Response(reqResult, resMessage, requestClientID);
+        this.broadcastRemoteControl(remotingClientID, res);
+        return res;
+    }
+
     private remoteResponseFactory(pClientID:string, affectedDrone: Drone, cmdValue: string): Response {
             var resRemoteMessage: string;
             switch (cmdValue) {
