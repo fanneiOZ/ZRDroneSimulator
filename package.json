@@ -1,5 +1,5 @@
 {
-  "name": "DroneSimulator",
+  "name": "drone-simulator",
   "description": "Backend WebSocket for ZENRoom test",
   "repository": "https://github.com/fanneiOZ/ZRDroneSimulator.git",
   "private": true,
@@ -7,12 +7,9 @@
     "start": "node build/DroneSimBE.js"
   },
   "dependencies": {
-    "express": "^4.16.3",
-    "ws": ">=7.2.1"
+    "express": "^4.16.3"
   },
   "devDependencies": {
-    "@types/compression": "0.0.36",
-    "@types/ws": "0.0.29",
     "@types/express": "4.0.31",
     "@types/node": "4.0.30",
     "typescript": "2.5.0"

@@ -4,5 +4,6 @@ build
 build/*
 node_modules
 systemjs.config.js
-index.html
-.vs/*
+
+.vs
+.idea
