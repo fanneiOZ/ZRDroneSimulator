@@ -4,7 +4,10 @@
     "module": "commonjs",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "outDir": "build"
+    "outDir": "build",
+    "noImplicitAny": true,
+    "rootDirs": ["src", "tests"],
+    "baseUrl": "./src"
   },
-  "exclude": ["node_modules", "tests"]
+  "exclude": ["node_modules"]
 }
