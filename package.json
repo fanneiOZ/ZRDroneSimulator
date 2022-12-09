@@ -7,7 +7,7 @@
     "start": "node build/DroneSimBE.js"
   },
   "dependencies": {
-    "express": "^4.16.3",
+    "express": "^4.17.3",
     "tsyringe": "^4.2.0",
     "reflect-metadata": "^0.1.13"
   },
